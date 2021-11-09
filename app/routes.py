@@ -1,18 +1,21 @@
 from app import db
 from app.models.customer import Customer
 from app.models.video import Video
+from app.models.rental import Rental
 from flask import Blueprint, jsonify, request
 from datetime import datetime
 from sqlalchemy import exc
 
 customer_bp = Blueprint("customer", __name__, url_prefix="/customers")
 video_bp = Blueprint("video", __name__, url_prefix="/videos")
+rental_bp = Blueprint("rental", __name__, url_prefix="/rentals")
 
-select_model = {"customer": Customer, "video": Video}
+select_model = {"customer": Customer, "video": Video, "rental": Rental}
 
 
 @customer_bp.route("", methods=["GET"])
 @video_bp.route("", methods=["GET"])
+@rental_bp.route("", methods=["GET"])
 def get_all_item():
     model = select_model[request.blueprint]
     return jsonify([item.to_dict() for item in model.query.all()])
@@ -20,6 +23,7 @@ def get_all_item():
 
 @customer_bp.route("/<item_id>", methods=["GET", "DELETE", "PUT"])
 @video_bp.route("/<item_id>", methods=["GET", "DELETE", "PUT"])
+@rental_bp.route("/<item_id>", methods=["GET", "DELETE", "PUT"])
 def single_item(item_id):
     model = select_model[request.blueprint]
     try:
@@ -45,6 +49,7 @@ def single_item(item_id):
 
 @customer_bp.route("", methods=["POST"])
 @video_bp.route("", methods=["POST"])
+@rental_bp.route("", methods=["POST"])
 def post_create_item():
     model = select_model[request.blueprint]
     try:
