@@ -5,9 +5,9 @@ from datetime import datetime
 
 class Rental(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    customer_id = db.Column(db.Integer, db.ForeignKey("customer.id"))
+    customer_id = db.Column(db.Integer, db.ForeignKey("customer.id"), nullable=False)
     customer = db.relationship("Customer", back_populates="customer")
-    video_id = db.Column(db.Integer, db.ForeignKey("video.id"))
+    video_id = db.Column(db.Integer, db.ForeignKey("video.id"), nullable=False)
     video = db.relationship("Video", back_populates="video")
     due_date = db.Column(db.DateTime, nullable=False)
 
