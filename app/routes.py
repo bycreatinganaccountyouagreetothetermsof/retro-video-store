@@ -75,22 +75,22 @@ def get_all_videos():
     return jsonify([v.to_dict() for v in Video.query.all()])
 
 
-@customer_bp.route("/<item_id>", methods=["GET"])
-@video_bp.route("/<item_id>", methods=["GET"])
-def get_single_item(item_id):
+@customer_bp.route("/<item_id>", methods=["GET", "DELETE"])
+@video_bp.route("/<item_id>", methods=["GET", "DELETE"])
+def single_item(item_id):
     model = {"customer": Customer, "video": Video}[request.blueprint]
     try:
         item = model.query.get(item_id)
     except exc.DataError:
         return {"message": f"Invalid {request.blueprint} id"}, 400
-    return (
-        (item.to_dict(), 200)
-        if item
-        else (
-            {"message": f"{request.blueprint.capitalize()} {item_id} was not found"},
-            404,
-        )
-    )
+    if not item:
+        return {
+            "message": f"{request.blueprint.capitalize()} {item_id} was not found"
+        }, 404
+    if request.method == "DELETE":
+        db.session.delete(item)
+        db.session.commit()
+    return (item.to_dict(), 200)
 
 
 @customer_bp.route("", methods=["POST"])
