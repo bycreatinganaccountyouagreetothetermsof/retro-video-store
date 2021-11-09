@@ -3,6 +3,7 @@ from app.models.customer import Customer
 from app.models.video import Video
 from flask import Blueprint, jsonify, request
 from datetime import datetime
+from sqlalchemy import exc
 
 customer_bp = Blueprint("customer", __name__, url_prefix="/customers")
 video_bp = Blueprint("video", __name__, url_prefix="/videos")
@@ -74,14 +75,22 @@ def get_all_videos():
     return jsonify([v.to_dict() for v in Video.query.all()])
 
 
-@customer_bp.route("/<customer_id>", methods=["GET"])
-def get_single_customer(customer_id):
-    return Customer.query.get_or_404(customer_id).to_dict()
-
-
-@video_bp.route("/<video_id>", methods=["GET"])
-def get_single_video(video_id):
-    return Video.query.get_or_404(video_id).to_dict()
+@customer_bp.route("/<item_id>", methods=["GET"])
+@video_bp.route("/<item_id>", methods=["GET"])
+def get_single_item(item_id):
+    model = {"customer": Customer, "video": Video}[request.blueprint]
+    try:
+        item = model.query.get(item_id)
+    except exc.DataError:
+        return {"message": f"Invalid {request.blueprint} id"}, 400
+    return (
+        (item.to_dict(), 200)
+        if item
+        else (
+            {"message": f"{request.blueprint.capitalize()} {item_id} was not found"},
+            404,
+        )
+    )
 
 
 @customer_bp.route("", methods=["POST"])
