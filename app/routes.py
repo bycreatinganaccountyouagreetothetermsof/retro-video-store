@@ -95,7 +95,8 @@ def single_item(item_id):
             item.update(request.get_json())
             db.session.commit()
         except KeyError as e:
-            return {"details": f"Invalid data."}, 400
+            missing_field = e.args[0]
+            return {"details": f"Request body must include {missing_field}."}, 400
     return (item.to_dict(), 200)
 
 
