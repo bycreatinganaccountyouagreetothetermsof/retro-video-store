@@ -6,9 +6,9 @@ from datetime import datetime
 class Rental(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     customer_id = db.Column(db.Integer, db.ForeignKey("customer.id"), nullable=False)
-    customer = db.relationship("Customer", back_populates="customer")
+    customer = db.relationship("Customer", back_populates="rentals")
     video_id = db.Column(db.Integer, db.ForeignKey("video.id"), nullable=False)
-    video = db.relationship("Video", back_populates="video")
+    video = db.relationship("Video", back_populates="rentals")
     due_date = db.Column(db.DateTime, nullable=False)
 
     def to_dict(self):

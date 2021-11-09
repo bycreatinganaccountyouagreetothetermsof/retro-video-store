@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 3577d3afa8df
+Revision ID: 3c6f7ddaf60d
 Revises: 00ec5fa824fa
-Create Date: 2021-11-09 15:14:17.238453
+Create Date: 2021-11-09 15:26:58.953777
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = '3577d3afa8df'
+revision = '3c6f7ddaf60d'
 down_revision = '00ec5fa824fa'
 branch_labels = None
 depends_on = None
@@ -30,8 +30,8 @@ def upgrade():
     op.add_column('rental', sa.Column('customer_id', sa.Integer(), nullable=False))
     op.add_column('rental', sa.Column('due_date', sa.DateTime(), nullable=False))
     op.add_column('rental', sa.Column('video_id', sa.Integer(), nullable=False))
-    op.create_foreign_key(None, 'rental', 'customer', ['customer_id'], ['id'])
     op.create_foreign_key(None, 'rental', 'video', ['video_id'], ['id'])
+    op.create_foreign_key(None, 'rental', 'customer', ['customer_id'], ['id'])
     op.alter_column('video', 'release_date',
                existing_type=postgresql.TIMESTAMP(),
                nullable=False)
