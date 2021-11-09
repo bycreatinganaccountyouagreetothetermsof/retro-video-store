@@ -8,21 +8,20 @@ from sqlalchemy import exc
 customer_bp = Blueprint("customer", __name__, url_prefix="/customers")
 video_bp = Blueprint("video", __name__, url_prefix="/videos")
 
+select_model = {"customer": Customer, "video": Video}
+
 
 @customer_bp.route("", methods=["GET"])
-def get_all_customers():
-    return jsonify([c.to_dict() for c in Customer.query.all()])
-
-
 @video_bp.route("", methods=["GET"])
-def get_all_videos():
-    return jsonify([v.to_dict() for v in Video.query.all()])
+def get_all_item():
+    model = select_model[request.blueprint]
+    return jsonify([item.to_dict() for item in model.query.all()])
 
 
 @customer_bp.route("/<item_id>", methods=["GET", "DELETE", "PUT"])
 @video_bp.route("/<item_id>", methods=["GET", "DELETE", "PUT"])
 def single_item(item_id):
-    model = {"customer": Customer, "video": Video}[request.blueprint]
+    model = select_model[request.blueprint]
     try:
         item = model.query.get(item_id)
     except exc.DataError:
@@ -47,7 +46,7 @@ def single_item(item_id):
 @customer_bp.route("", methods=["POST"])
 @video_bp.route("", methods=["POST"])
 def post_create_item():
-    model = {"customer": Customer, "video": Video}[request.blueprint]
+    model = select_model[request.blueprint]
     try:
         new_item = model(**request.get_json())
         db.session.add(new_item)
