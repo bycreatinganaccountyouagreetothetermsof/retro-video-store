@@ -97,7 +97,11 @@ def get_single_item(item_id):
 @video_bp.route("", methods=["POST"])
 def post_create_item():
     model = {"customer": Customer, "video": Video}[request.blueprint]
-    new_item = model(**model.validate(request.get_json()))
-    db.session.add(new_item)
-    db.commit()
-    return new_item.to_dict()
+    try:
+        new_item = model(**request.get_json())
+        db.session.add(new_item)
+        db.session.commit()
+    except exc.IntegrityError as e:
+        missing_field = max(e.params, key=lambda p: e.params[p] is None)
+        return {"details": f"Request body must include {missing_field}."}, 400
+    return new_item.to_dict(), 201
