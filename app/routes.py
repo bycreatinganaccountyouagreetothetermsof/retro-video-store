@@ -66,12 +66,12 @@ def get_all_customers():
         200:
             description: Successful response containing all customer records. May be empty.
     """
-    return [c.to_dict() for c in Customer.query.all()]
+    return jsonify([c.to_dict() for c in Customer.query.all()])
 
 
 @video_bp.route("", methods=["GET"])
 def get_all_videos():
-    return [v.to_dict() for v in Video.query.all()]
+    return jsonify([v.to_dict() for v in Video.query.all()])
 
 
 @customer_bp.route("/<customer_id>", methods=["GET"])

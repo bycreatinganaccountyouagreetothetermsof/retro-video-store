@@ -10,10 +10,8 @@ class Video(db.Model):
 
     def to_dict(self):
         return dict_of(
-            [
-                self.id,
-                self.title,
-                self.release_date,
-                self.total_inventory,
-            ]
+            self.id,
+            self.title,
+            self.release_date,
+            self.total_inventory,
         )
