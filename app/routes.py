@@ -75,8 +75,8 @@ def get_all_videos():
     return jsonify([v.to_dict() for v in Video.query.all()])
 
 
-@customer_bp.route("/<item_id>", methods=["GET", "DELETE"])
-@video_bp.route("/<item_id>", methods=["GET", "DELETE"])
+@customer_bp.route("/<item_id>", methods=["GET", "DELETE", "PUT"])
+@video_bp.route("/<item_id>", methods=["GET", "DELETE", "PUT"])
 def single_item(item_id):
     model = {"customer": Customer, "video": Video}[request.blueprint]
     try:
@@ -90,6 +90,12 @@ def single_item(item_id):
     if request.method == "DELETE":
         db.session.delete(item)
         db.session.commit()
+    elif request.method == "PUT":
+        try:
+            item.update(request.get_json())
+            db.session.commit()
+        except KeyError as e:
+            return {"details": f"Invalid data."}, 400
     return (item.to_dict(), 200)
 
 
