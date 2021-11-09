@@ -9,6 +9,7 @@ class Customer(db.Model):
     postal_code = db.Column(db.String, nullable=False)
     phone = db.Column(db.String, nullable=False)
     registered_at = db.Column(db.DateTime, default=datetime.utcnow)
+    rentals = db.relationship("Rental", back_populates="rentals")
 
     def update(self, new_data):
         self.name = new_data["name"]
