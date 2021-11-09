@@ -10,6 +10,11 @@ class Customer(db.Model):
     phone = db.Column(db.String, nullable=False)
     registered_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    def update(self, new_data):
+        self.name = new_data["name"]
+        self.postal_code = new_data["postal_code"]
+        self.phone = new_data["phone"]
+
     def to_dict(self):
         return dict_of(
             self.id,
