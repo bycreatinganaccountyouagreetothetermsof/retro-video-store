@@ -27,3 +27,14 @@ def test_video_sorting_with_pagination(client, ten_videos):
     assert response.status_code == 200
     assert len(response_body) == 5
     assert response_body[0]["id"] == 5
+
+
+def test_customer_sorting_with_pagination(client, twenty_customers):
+    # Act
+    response = client.get("/customers?sort=name&n=10&p=2")
+    response_body = response.get_json()
+
+    # Assert
+    assert response.status_code == 200
+    assert len(response_body) == 10
+    assert response_body[0]["id"] == 10

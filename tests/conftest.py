@@ -70,11 +70,11 @@ def one_customer(app):
 
 
 @pytest.fixture
-def ten_customers(app):
-    for i in range(10):
+def twenty_customers(app):
+    for i in range(20):
         db.session.add(
             Customer(
-                name=CUSTOMER_NAME,
+                name=chr(90 - i) + CUSTOMER_NAME,
                 postal_code=CUSTOMER_POSTAL_CODE,
                 phone=CUSTOMER_PHONE,
             )
