@@ -53,7 +53,7 @@ def test_customer_sorting_with_pagination(client, twenty_customers):
     assert response_body[0]["id"] == 10
 
 
-def test_overdue_rentals(client, one_checked_out_video):
+def test_one_overdue_rental(client, one_checked_out_video):
     response = client.get("/rentals/overdue")
     response_body = response.get_json()
 
@@ -71,3 +71,18 @@ def test_overdue_rentals(client, one_checked_out_video):
         datetime.strptime(overdue["due_date"], "%a, %d %b %Y %H:%M:%S GMT").date()
         <= datetime.today().date()
     )
+
+
+def test_some_returned_some_overdue_rentals(client, five_overdue_five_returned):
+    response = client.get("/rentals/overdue")
+    response_body = response.get_json()
+
+    assert response.status_code == 200
+    assert len(response_body) == 5
+
+    for overdue in response_body:
+        assert "checkout_date" in overdue
+        assert (
+            datetime.strptime(overdue["due_date"], "%a, %d %b %Y %H:%M:%S GMT").date()
+            <= datetime.today().date()
+        )
