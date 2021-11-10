@@ -21,3 +21,14 @@ class Rental(db.Model):
             videos_checked_out_count=len(self.video.rentals),
             available_inventory=(self.video.total_inventory - len(self.video.rentals)),
         )
+
+    def overdue_dict(self):
+        return dict_of(
+            self.video_id,
+            self.video.title,
+            self.customer_id,
+            self.customer.name,
+            self.customer.postal_code,
+            self.checkout_date,
+            self.due_date,
+        )

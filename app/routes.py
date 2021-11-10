@@ -143,3 +143,9 @@ def list_rentals(item_id):
             for rental in item.rentals
         ]
     )
+
+
+@rental_bp.route("/overdue", methods=["GET"])
+def overdue_rentals():
+    overdue = Rental.query.filter(Rental.due_date <= datetime.utcnow()).all()
+    return jsonify([rental.overdue_dict() for rental in overdue])
