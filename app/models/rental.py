@@ -12,14 +12,16 @@ class Rental(db.Model):
     video = db.relationship("Video", back_populates="rentals")
     due_date = db.Column(db.DateTime, nullable=False)
     checkout_date = db.Column(db.DateTime, nullable=False, server_default=func.now())
+    checked_in = db.Column(db.DateTime)
 
     def to_dict(self):
+        active_rentals = len([v for v in self.video.rentals if not v.rental.checked_in])
         return dict_of(
             self.customer_id,
             self.video_id,
             self.due_date,
-            videos_checked_out_count=len(self.video.rentals),
-            available_inventory=(self.video.total_inventory - len(self.video.rentals)),
+            videos_checked_out_count=active_rentals,
+            available_inventory=(self.video.total_inventory - active_rentals),
         )
 
     def overdue_dict(self):
