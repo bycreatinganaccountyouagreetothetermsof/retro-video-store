@@ -86,3 +86,19 @@ def test_some_returned_some_overdue_rentals(client, five_overdue_five_returned):
             datetime.strptime(overdue["due_date"], "%a, %d %b %Y %H:%M:%S GMT").date()
             <= datetime.today().date()
         )
+
+
+def test_get_video_history(client, five_overdue_five_returned):
+    response = client.get("/videos/1/history")
+    response_body = response.get_json()
+
+    assert response.status_code == 200
+    assert len(response_body) == 1
+
+
+def test_get_customer_history(client, five_overdue_five_returned):
+    response = client.get("/customers/1/history")
+    response_body = response.get_json()
+
+    assert response.status_code == 200
+    assert len(response_body) == 1

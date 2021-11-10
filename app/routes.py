@@ -122,10 +122,11 @@ def check_in():
     return completed_rental
 
 
-@customer_bp.route("<item_id>/rentals", methods=["GET"])
-@video_bp.route("<item_id>/rentals", methods=["GET"])
-def list_active_rentals(item_id):
+@customer_bp.route("<item_id>/<rentals_or_history>", methods=["GET"])
+@video_bp.route("<item_id>/<rentals_or_history>", methods=["GET"])
+def list_active_rentals(item_id, rentals_or_history):
     model = select_model[request.blueprint]
+    preference = {"rentals": True, "history": False}[rentals_or_history]
     try:
         item = model.query.get(item_id)
     except exc.DataError:
@@ -138,7 +139,7 @@ def list_active_rentals(item_id):
         [
             getattr(rental, counterpart_model[request.blueprint]).to_dict()
             for rental in item.rentals
-            if not rental.checked_in
+            if preference == (not rental.checked_in)
         ]
     )
 
