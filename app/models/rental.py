@@ -1,4 +1,5 @@
 from app import db
+from sqlalchemy.sql import func
 from sorcery import dict_of
 from datetime import datetime
 
@@ -10,6 +11,7 @@ class Rental(db.Model):
     video_id = db.Column(db.Integer, db.ForeignKey("video.id"), nullable=False)
     video = db.relationship("Video", back_populates="rentals")
     due_date = db.Column(db.DateTime, nullable=False)
+    checkout_date = db.Column(db.DateTime, nullable=False, server_default=func.now())
 
     def to_dict(self):
         return dict_of(
