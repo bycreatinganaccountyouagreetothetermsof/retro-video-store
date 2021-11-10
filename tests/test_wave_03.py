@@ -1,3 +1,7 @@
+import pytest
+from app.models.video import Video
+from app.models.customer import Customer
+from app import db
 from datetime import datetime
 
 VIDEO_TITLE = "A Brand New Video"
@@ -9,6 +13,44 @@ CUSTOMER_NAME = "A Brand New Customer"
 CUSTOMER_ID = 1
 CUSTOMER_POSTAL_CODE = "12345"
 CUSTOMER_PHONE = "123-123-1234"
+
+
+@pytest.fixture
+def ten_videos(app):
+    for i in range(2000, 1990, -1):
+        db.session.add(
+            Video(
+                title=VIDEO_TITLE,
+                release_date=f"01-01-{i}",  # dates receding
+                total_inventory=VIDEO_INVENTORY,
+            )
+        )
+    db.session.commit()
+
+
+@pytest.fixture
+def twenty_customers(app):
+    for i in range(20):
+        db.session.add(
+            Customer(
+                name=chr(90 - i) + CUSTOMER_NAME,
+                postal_code=CUSTOMER_POSTAL_CODE,
+                phone=CUSTOMER_PHONE,
+            )
+        )
+    db.session.commit()
+
+
+@pytest.fixture
+def five_overdue_five_returned(app, client, twenty_customers, ten_videos):
+    for i in range(10):
+        response = client.post(
+            "/rentals/check-out", json={"customer_id": i, "video_id": i}
+        )
+    for i in range(5):
+        response = client.post(
+            "/rentals/check-in", json={"customer_id": i, "video_id": i}
+        )
 
 
 def test_video_pagination(client, ten_videos):
