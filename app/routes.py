@@ -39,6 +39,9 @@ def single_item(item_id):
             "message": f"{request.blueprint.capitalize()} {item_id} was not found"
         }, 404
     if request.method == "DELETE":
+        for active_rental in item.rentals:
+            active_rental.video.total_inventory -= 1
+            db.session.delete(active_rental)
         db.session.delete(item)
         db.session.commit()
     elif request.method == "PUT":
