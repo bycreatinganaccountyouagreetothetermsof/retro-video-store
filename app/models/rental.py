@@ -14,7 +14,32 @@ class Rental(db.Model):
     checkout_date = db.Column(db.DateTime, nullable=False, server_default=func.now())
     checked_in = db.Column(db.DateTime)
 
-    def to_dict(self):
+    def to_dict(self, format=None):
+        print(format)
+        if format == "overdue":
+            return dict_of(
+                self.video_id,
+                self.video.title,
+                self.customer_id,
+                self.customer.name,
+                self.customer.postal_code,
+                self.checkout_date,
+                self.due_date,
+            )
+        if format == "video":
+            return dict_of(
+                self.customer_id,
+                self.customer.name,
+                self.customer.postal_code,
+                self.checkout_date,
+                self.due_date,
+            )
+        if format == "customer":
+            return dict_of(
+                self.video.title,
+                self.checkout_date,
+                self.due_date,
+            )
         active_rentals = len([r for r in self.video.rentals if not r.checked_in])
         return dict_of(
             self.customer_id,
@@ -22,15 +47,4 @@ class Rental(db.Model):
             self.due_date,
             videos_checked_out_count=active_rentals,
             available_inventory=(self.video.total_inventory - active_rentals),
-        )
-
-    def overdue_dict(self):
-        return dict_of(
-            self.video_id,
-            self.video.title,
-            self.customer_id,
-            self.customer.name,
-            self.customer.postal_code,
-            self.checkout_date,
-            self.due_date,
         )

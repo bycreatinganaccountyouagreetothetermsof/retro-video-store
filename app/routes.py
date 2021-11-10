@@ -124,9 +124,9 @@ def check_in():
 
 @customer_bp.route("<item_id>/<rentals_or_history>", methods=["GET"])
 @video_bp.route("<item_id>/<rentals_or_history>", methods=["GET"])
-def list_active_rentals(item_id, rentals_or_history):
+def list_rentals(item_id, rentals_or_history):
     model = select_model[request.blueprint]
-    preference = {"rentals": True, "history": False}[rentals_or_history]
+    rentals_or_history = {"rentals": True, "history": False}[rentals_or_history]
     try:
         item = model.query.get(item_id)
     except exc.DataError:
@@ -137,9 +137,13 @@ def list_active_rentals(item_id, rentals_or_history):
         }, 404
     return jsonify(
         [
-            getattr(rental, counterpart_model[request.blueprint]).to_dict()
+            (
+                getattr(rental, counterpart_model[request.blueprint]).to_dict()
+                if rentals_or_history
+                else rental.to_dict(request.blueprint)
+            )
             for rental in item.rentals
-            if preference == (not rental.checked_in)
+            if rentals_or_history == (not rental.checked_in)
         ]
     )
 
@@ -151,4 +155,4 @@ def overdue_rentals():
         .filter(Rental.due_date <= datetime.utcnow())
         .all()
     )
-    return jsonify([rental.overdue_dict() for rental in overdue])
+    return jsonify([rental.to_dict(format="overdue") for rental in overdue])
