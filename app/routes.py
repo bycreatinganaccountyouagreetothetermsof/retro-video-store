@@ -5,7 +5,6 @@ from app.models.rental import Rental
 from flask import Blueprint, jsonify, request
 from datetime import datetime, timedelta
 from sqlalchemy import exc
-from sorcery import dict_of
 
 customer_bp = Blueprint("customer", __name__, url_prefix="/customers")
 video_bp = Blueprint("video", __name__, url_prefix="/videos")
