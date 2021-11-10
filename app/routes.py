@@ -23,7 +23,7 @@ def page_or_all(model, sort=None, n=None, p=None):
     if sort:
         sort = getattr(model, sort)
     if n or p:
-        return model.query.order_by(sort).paginate(per_page=n, page=p)
+        return model.query.order_by(sort).paginate(per_page=int(n), page=int(p)).items
     return model.query.order_by(sort).all()
 
 
