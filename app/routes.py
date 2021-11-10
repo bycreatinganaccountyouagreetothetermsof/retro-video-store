@@ -11,7 +11,8 @@ customer_bp = Blueprint("customer", __name__, url_prefix="/customers")
 video_bp = Blueprint("video", __name__, url_prefix="/videos")
 rental_bp = Blueprint("rental", __name__, url_prefix="/rentals")
 
-select_model = {"customer": Customer, "video": Video, "rental": Rental}
+select_model = {"customer": Customer, "video": Video}
+counterpart_model = {"customer": "video", "video": "customer"}
 
 
 def must_include(field_name):
@@ -109,3 +110,23 @@ def check_in():
     db.session.delete(active_rental)
     db.session.commit()
     return rental_complete
+
+
+@customer_bp.route("<item_id>/rentals", methods=["GET"])
+@video_bp.route("<item_id>/rentals", methods=["GET"])
+def list_rentals(item_id):
+    model = select_model[request.blueprint]
+    try:
+        item = model.query.get(item_id)
+    except exc.DataError:
+        return {"message": f"Invalid {request.blueprint} id"}, 400
+    if not item:
+        return {
+            "message": f"{request.blueprint.capitalize()} {item_id} was not found"
+        }, 404
+    return jsonify(
+        [
+            getattr(rental, counterpart_model[request.blueprint]).to_dict()
+            for rental in item.rentals
+        ]
+    )
