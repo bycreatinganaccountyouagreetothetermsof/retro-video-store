@@ -7,6 +7,7 @@ class Video(db.Model):
     title = db.Column(db.String, nullable=False)
     release_date = db.Column(db.DateTime, nullable=False)
     total_inventory = db.Column(db.Integer, nullable=False)
+    rentals = db.relationship("Rental", back_populates="video")
 
     def update(self, new_data):
         self.title = new_data["title"]

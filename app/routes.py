@@ -1,14 +1,22 @@
 from app import db
 from app.models.customer import Customer
 from app.models.video import Video
+from app.models.rental import Rental
 from flask import Blueprint, jsonify, request
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy import exc
+from sorcery import dict_of
 
 customer_bp = Blueprint("customer", __name__, url_prefix="/customers")
 video_bp = Blueprint("video", __name__, url_prefix="/videos")
+rental_bp = Blueprint("rental", __name__, url_prefix="/rentals")
 
 select_model = {"customer": Customer, "video": Video}
+counterpart_model = {"customer": "video", "video": "customer"}
+
+
+def must_include(field_name):
+    return {"details": f"Request body must include {field_name}."}, 400
 
 
 @customer_bp.route("", methods=["GET"])
@@ -31,6 +39,9 @@ def single_item(item_id):
             "message": f"{request.blueprint.capitalize()} {item_id} was not found"
         }, 404
     if request.method == "DELETE":
+        for active_rental in item.rentals:
+            active_rental.video.total_inventory -= 1
+            db.session.delete(active_rental)
         db.session.delete(item)
         db.session.commit()
     elif request.method == "PUT":
@@ -39,7 +50,7 @@ def single_item(item_id):
             db.session.commit()
         except KeyError as e:
             missing_field = e.args[0]
-            return {"details": f"Request body must include {missing_field}."}, 400
+            return must_include(missing_field)
     return (item.to_dict(), 200)
 
 
@@ -53,5 +64,72 @@ def post_create_item():
         db.session.commit()
     except exc.IntegrityError as e:
         missing_field = max(e.params, key=lambda p: e.params[p] is None)
-        return {"details": f"Request body must include {missing_field}."}, 400
+        return must_include(missing_field)
     return new_item.to_dict(), 201
+
+
+@rental_bp.route("/check-out", methods=["POST"])
+def check_out():
+    rental_data = request.get_json()
+    rental_data["due_date"] = datetime.utcnow() + timedelta(days=-7)  # last week lol
+    try:
+        rental_data["video"] = Video.query.get_or_404(rental_data["video_id"])
+        rental_data["customer"] = Customer.query.get_or_404(rental_data["customer_id"])
+        new_rental = Rental(**rental_data)
+    except KeyError as e:
+        missing_field = e.args[0]
+        return must_include(missing_field)
+    except exc.IntegrityError as e:
+        missing_field = max(e.params, key=lambda p: e.params[p] is None)
+        return must_include(missing_field)
+    if new_rental.video.total_inventory < len(new_rental.video.rentals):
+        return {"message": "Could not perform checkout"}, 400
+    db.session.add(new_rental)
+    db.session.commit()
+    return new_rental.to_dict()
+
+
+@rental_bp.route("/check-in", methods=["POST"])
+def check_in():
+    rental_data = request.get_json()
+    try:
+        video_rented = Video.query.get_or_404(rental_data["video_id"])
+        customer_rented = Customer.query.get_or_404(rental_data["customer_id"])
+        active_rental = Rental.query.filter_by(**rental_data).first()
+    except KeyError as e:
+        missing_field = e.args[0]
+        return must_include(missing_field)
+    except exc.IntegrityError as e:
+        missing_field = max(e.params, key=lambda p: e.params[p] is None)
+        return must_include(missing_field)
+    else:
+        if not active_rental:
+            return {
+                "message": f"No outstanding rentals for customer {customer_rented.id} and video {video_rented.id}"
+            }, 400
+    rental_complete = active_rental.to_dict()
+    rental_complete["videos_checked_out_count"] -= 1
+    rental_complete["available_inventory"] += 1
+    db.session.delete(active_rental)
+    db.session.commit()
+    return rental_complete
+
+
+@customer_bp.route("<item_id>/rentals", methods=["GET"])
+@video_bp.route("<item_id>/rentals", methods=["GET"])
+def list_rentals(item_id):
+    model = select_model[request.blueprint]
+    try:
+        item = model.query.get(item_id)
+    except exc.DataError:
+        return {"message": f"Invalid {request.blueprint} id"}, 400
+    if not item:
+        return {
+            "message": f"{request.blueprint.capitalize()} {item_id} was not found"
+        }, 404
+    return jsonify(
+        [
+            getattr(rental, counterpart_model[request.blueprint]).to_dict()
+            for rental in item.rentals
+        ]
+    )
