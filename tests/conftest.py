@@ -85,3 +85,15 @@ def twenty_customers(app):
 @pytest.fixture
 def one_checked_out_video(app, client, one_customer, one_video):
     response = client.post("/rentals/check-out", json={"customer_id": 1, "video_id": 1})
+
+
+@pytest.fixture
+def five_overdue_five_returned(app, client, twenty_customers, ten_videos):
+    for i in range(10):
+        response = client.post(
+            "/rentals/check-out", json={"customer_id": i, "video_id": i}
+        )
+    for i in range(5):
+        response = client.post(
+            "/rentals/check-in", json={"customer_id": i, "video_id": i}
+        )

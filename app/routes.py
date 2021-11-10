@@ -91,7 +91,7 @@ def check_out():
     except exc.IntegrityError as e:
         missing_field = max(e.params, key=lambda p: e.params[p] is None)
         return must_include(missing_field)
-    if new_rental.video.total_inventory < len(new_rental.video.rentals):
+    if new_rental.to_dict()["available_inventory"] < 0:
         return {"message": "Could not perform checkout"}, 400
     db.session.add(new_rental)
     db.session.commit()
@@ -104,7 +104,7 @@ def check_in():
     try:
         video_rented = Video.query.get_or_404(rental_data["video_id"])
         customer_rented = Customer.query.get_or_404(rental_data["customer_id"])
-        active_rental = Rental.query.filter_by(**rental_data).first()
+        active_rental = Rental.query.filter_by(**rental_data, checked_in=None).first()
     except KeyError as e:
         missing_field = e.args[0]
         return must_include(missing_field)
@@ -116,19 +116,17 @@ def check_in():
             return {
                 "message": f"No outstanding rentals for customer {customer_rented.id} and video {video_rented.id}"
             }, 400
-    rental_complete = active_rental.to_dict()
-    db.session.delete(active_rental)
+    active_rental.checked_in = datetime.utcnow()
     db.session.commit()
-    # cosmetic return values
-    rental_complete["videos_checked_out_count"] -= 1
-    rental_complete["available_inventory"] += 1
-    return rental_complete
+    completed_rental = active_rental.to_dict()
+    return completed_rental
 
 
-@customer_bp.route("<item_id>/rentals", methods=["GET"])
-@video_bp.route("<item_id>/rentals", methods=["GET"])
-def list_rentals(item_id):
+@customer_bp.route("<item_id>/<rentals_or_history>", methods=["GET"])
+@video_bp.route("<item_id>/<rentals_or_history>", methods=["GET"])
+def list_rentals(item_id, rentals_or_history):
     model = select_model[request.blueprint]
+    rentals_or_history = {"rentals": True, "history": False}[rentals_or_history]
     try:
         item = model.query.get(item_id)
     except exc.DataError:
@@ -139,7 +137,22 @@ def list_rentals(item_id):
         }, 404
     return jsonify(
         [
-            getattr(rental, counterpart_model[request.blueprint]).to_dict()
+            (
+                getattr(rental, counterpart_model[request.blueprint]).to_dict()
+                if rentals_or_history
+                else rental.to_dict(request.blueprint)
+            )
             for rental in item.rentals
+            if rentals_or_history == (not rental.checked_in)
         ]
     )
+
+
+@rental_bp.route("/overdue", methods=["GET"])
+def overdue_rentals():
+    overdue = (
+        Rental.query.filter_by(checked_in=None)
+        .filter(Rental.due_date <= datetime.utcnow())
+        .all()
+    )
+    return jsonify([rental.to_dict(format="overdue") for rental in overdue])

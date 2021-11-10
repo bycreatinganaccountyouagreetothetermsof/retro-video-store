@@ -1,4 +1,5 @@
 from app import db
+from sqlalchemy.sql import func
 from sorcery import dict_of
 from datetime import datetime
 
@@ -10,12 +11,40 @@ class Rental(db.Model):
     video_id = db.Column(db.Integer, db.ForeignKey("video.id"), nullable=False)
     video = db.relationship("Video", back_populates="rentals")
     due_date = db.Column(db.DateTime, nullable=False)
+    checkout_date = db.Column(db.DateTime, nullable=False, server_default=func.now())
+    checked_in = db.Column(db.DateTime)
 
-    def to_dict(self):
+    def to_dict(self, format=None):
+        print(format)
+        if format == "overdue":
+            return dict_of(
+                self.video_id,
+                self.video.title,
+                self.customer_id,
+                self.customer.name,
+                self.customer.postal_code,
+                self.checkout_date,
+                self.due_date,
+            )
+        if format == "video":
+            return dict_of(
+                self.customer_id,
+                self.customer.name,
+                self.customer.postal_code,
+                self.checkout_date,
+                self.due_date,
+            )
+        if format == "customer":
+            return dict_of(
+                self.video.title,
+                self.checkout_date,
+                self.due_date,
+            )
+        active_rentals = len([r for r in self.video.rentals if not r.checked_in])
         return dict_of(
             self.customer_id,
             self.video_id,
             self.due_date,
-            videos_checked_out_count=len(self.video.rentals),
-            available_inventory=(self.video.total_inventory - len(self.video.rentals)),
+            videos_checked_out_count=active_rentals,
+            available_inventory=(self.video.total_inventory - active_rentals),
         )
