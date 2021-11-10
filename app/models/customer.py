@@ -1,5 +1,4 @@
 from app import db
-from sorcery import dict_of
 from datetime import datetime
 
 
@@ -17,10 +16,10 @@ class Customer(db.Model):
         self.phone = new_data["phone"]
 
     def to_dict(self):
-        return dict_of(
-            self.id,
-            self.name,
-            self.postal_code,
-            self.phone,
-            self.registered_at,
-        )
+        return {
+            "id": self.id,
+            "name": self.name,
+            "postal_code": self.postal_code,
+            "phone": self.phone,
+            "registered_at": self.registered_at,
+        }

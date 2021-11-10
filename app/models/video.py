@@ -1,5 +1,4 @@
 from app import db
-from sorcery import dict_of
 
 
 class Video(db.Model):
@@ -15,9 +14,9 @@ class Video(db.Model):
         self.total_inventory = new_data["total_inventory"]
 
     def to_dict(self):
-        return dict_of(
-            self.id,
-            self.title,
-            self.release_date,
-            self.total_inventory,
-        )
+        return {
+            "id": self.id,
+            "title": self.title,
+            "release_date": self.release_date,
+            "total_inventory": self.total_inventory,
+        }
