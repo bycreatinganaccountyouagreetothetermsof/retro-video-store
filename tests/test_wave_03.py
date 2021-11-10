@@ -94,6 +94,12 @@ def test_get_video_history(client, five_overdue_five_returned):
 
     assert response.status_code == 200
     assert len(response_body) == 1
+    customer = response_body[0]
+    assert "customer_id" in customer
+    assert "name" in customer
+    assert "postal_code" in customer
+    assert "checkout_date" in customer
+    assert "due_date" in customer
 
 
 def test_get_customer_history(client, five_overdue_five_returned):
@@ -102,3 +108,8 @@ def test_get_customer_history(client, five_overdue_five_returned):
 
     assert response.status_code == 200
     assert len(response_body) == 1
+
+    video = response_body[0]
+    assert "title" in video
+    assert "checkout_date" in video
+    assert "due_date" in video
