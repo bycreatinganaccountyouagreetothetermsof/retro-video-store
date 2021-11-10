@@ -15,7 +15,7 @@ class Rental(db.Model):
     checked_in = db.Column(db.DateTime)
 
     def to_dict(self):
-        active_rentals = len([v for v in self.video.rentals if not v.rental.checked_in])
+        active_rentals = len([r for r in self.video.rentals if not r.checked_in])
         return dict_of(
             self.customer_id,
             self.video_id,
