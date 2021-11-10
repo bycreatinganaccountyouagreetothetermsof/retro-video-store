@@ -19,11 +19,20 @@ def must_include(field_name):
     return {"details": f"Request body must include {field_name}."}, 400
 
 
+def page_or_all(model, sort=None, n=None, p=None):
+    if sort:
+        sort = getattr(model, sort)
+    if n or p:
+        return model.query.order_by(sort).paginate(per_page=int(n), page=int(p)).items
+    return model.query.order_by(sort).all()
+
+
 @customer_bp.route("", methods=["GET"])
 @video_bp.route("", methods=["GET"])
-def get_all_item():
+def get_items():
     model = select_model[request.blueprint]
-    return jsonify([item.to_dict() for item in model.query.all()])
+    page = page_or_all(model, **request.args)
+    return jsonify([item.to_dict() for item in page])
 
 
 @customer_bp.route("/<item_id>", methods=["GET", "DELETE", "PUT"])
@@ -108,10 +117,11 @@ def check_in():
                 "message": f"No outstanding rentals for customer {customer_rented.id} and video {video_rented.id}"
             }, 400
     rental_complete = active_rental.to_dict()
-    rental_complete["videos_checked_out_count"] -= 1
-    rental_complete["available_inventory"] += 1
     db.session.delete(active_rental)
     db.session.commit()
+    # cosmetic return values
+    rental_complete["videos_checked_out_count"] -= 1
+    rental_complete["available_inventory"] += 1
     return rental_complete
 
 

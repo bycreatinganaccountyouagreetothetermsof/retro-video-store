@@ -14,6 +14,7 @@ CUSTOMER_NAME = "A Brand New Customer"
 CUSTOMER_POSTAL_CODE = "12345"
 CUSTOMER_PHONE = "123-123-1234"
 
+
 @pytest.fixture
 def app():
     app = create_app({"TESTING": True})
@@ -34,33 +35,53 @@ def app():
 def client(app):
     return app.test_client()
 
+
 @pytest.fixture
 def one_video(app):
     new_video = Video(
-        title=VIDEO_TITLE, 
+        title=VIDEO_TITLE,
         release_date=VIDEO_RELEASE_DATE,
         total_inventory=VIDEO_INVENTORY,
-        )
+    )
     db.session.add(new_video)
     db.session.commit()
+
+
+@pytest.fixture
+def ten_videos(app):
+    for i in range(2000, 1990, -1):
+        db.session.add(
+            Video(
+                title=VIDEO_TITLE,
+                release_date=f"01-01-{i}",  # dates receding
+                total_inventory=VIDEO_INVENTORY,
+            )
+        )
+    db.session.commit()
+
 
 @pytest.fixture
 def one_customer(app):
     new_customer = Customer(
-        name=CUSTOMER_NAME,
-        postal_code=CUSTOMER_POSTAL_CODE,
-        phone=CUSTOMER_PHONE
+        name=CUSTOMER_NAME, postal_code=CUSTOMER_POSTAL_CODE, phone=CUSTOMER_PHONE
     )
     db.session.add(new_customer)
     db.session.commit()
 
+
+@pytest.fixture
+def twenty_customers(app):
+    for i in range(20):
+        db.session.add(
+            Customer(
+                name=chr(90 - i) + CUSTOMER_NAME,
+                postal_code=CUSTOMER_POSTAL_CODE,
+                phone=CUSTOMER_PHONE,
+            )
+        )
+    db.session.commit()
+
+
 @pytest.fixture
 def one_checked_out_video(app, client, one_customer, one_video):
-    response = client.post("/rentals/check-out", json={
-        "customer_id": 1,
-        "video_id": 1
-    })
-
-
-
-
+    response = client.post("/rentals/check-out", json={"customer_id": 1, "video_id": 1})
