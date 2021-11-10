@@ -30,7 +30,7 @@ def page_or_all(model, sort=None, n=None, p=None):
 @video_bp.route("", methods=["GET"])
 def get_items():
     model = select_model[request.blueprint]
-    page = page_or_all(model, **request.args)
+    page = page_or_all(model, **request.args)  # potential sanitizaiton issue
     return jsonify([item.to_dict() for item in page])
 
 
@@ -67,7 +67,7 @@ def single_item(item_id):
 def post_create_item():
     model = select_model[request.blueprint]
     try:
-        new_item = model(**request.get_json())
+        new_item = model(**request.get_json())  # potential sanitizaiton issue
         db.session.add(new_item)
         db.session.commit()
     except exc.IntegrityError as e:
@@ -83,7 +83,7 @@ def check_out():
     try:
         rental_data["video"] = Video.query.get_or_404(rental_data["video_id"])
         rental_data["customer"] = Customer.query.get_or_404(rental_data["customer_id"])
-        new_rental = Rental(**rental_data)
+        new_rental = Rental(**rental_data)  # potential sanitizaiton issue
     except KeyError as e:
         missing_field = e.args[0]
         return must_include(missing_field)
@@ -103,7 +103,9 @@ def check_in():
     try:
         video_rented = Video.query.get_or_404(rental_data["video_id"])
         customer_rented = Customer.query.get_or_404(rental_data["customer_id"])
-        active_rental = Rental.query.filter_by(**rental_data, checked_in=None).first()
+        active_rental = Rental.query.filter_by(
+            **rental_data, checked_in=None
+        ).first()  # potential sanitizaiton issue
     except KeyError as e:
         missing_field = e.args[0]
         return must_include(missing_field)
