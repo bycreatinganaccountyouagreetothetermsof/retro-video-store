@@ -1,12 +1,5 @@
 import requests
 
-# RVS_URL = "https://aqueous-depths-76508.herokuapp.com/"
-RVS_URL = "http://localhost:5000/"
-
-
-def item_url(model, id=None, ext=None):
-    return RVS_URL + f"/{model}" + (f"/{id}" if id else "") + (f"/{ext}" if ext else "")
-
 
 def post_video(title, release_date, total_inventory):
     video_data = {

@@ -1,52 +1,47 @@
-import sys
-import argparse
-import json
-from .api import *
-from .format import *
+import click
+import requests
+from dotenv import load_dotenv
+import os, sys
+
+RVS_API = os.environ.get("RVS_TEST_API")
 
 
-def init_parser():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--json", action="store_true")
-    subparsers = parser.add_subparsers()
-
-    p_video = subparsers.add_parser("videos")
-    p_video.add_argument("video_ids", type=int, nargs="*")
-    p_video.set_defaults(function=get_videos)
-    p_video.set_defaults(formatter=format_videos)
-
-    p_customer = subparsers.add_parser("customers")
-    p_customer.add_argument("customer_ids", type=int, nargs="*")
-    p_customer.set_defaults(function=get_customers)
-    p_customer.set_defaults(formatter=format_customers)
-
-    p_rentals = subparsers.add_parser("rentals")
-    p_rentals.add_argument("--customer", type=int, nargs="+")
-    p_rentals.add_argument("--video", type=int, nargs="+")
-    p_rentals.add_argument(
-        "status",
-        nargs="?",
-        default="active",
-        choices=["active", "all", "overdue", "returned"],
-    )
-    p_rentals.set_defaults(function=get_rentals)
-    p_rentals.set_defaults(formatter=format_rentals)
-
-    return parser
+def item_url(model, id=None, ext=None):
+    return RVS_API + f"/{model}" + (f"/{id}" if id else "") + (f"/{ext}" if ext else "")
 
 
-def main():
-    args = vars(init_parser().parse_args())
-    action = args.pop("function")
-    formatter = args.pop("formatter")
-    format_options = {"status": args.get("status")}
-    json_out = args.pop("json")
-    result = action(**args)
-    if not json_out:
-        print(formatter(json.loads(result.text), **format_options))
-    else:
-        print(result.text)
+#    p_rentals = subparsers.add_parser("rentals")
+#    p_rentals.add_argument("--customer", type=int, nargs="+")
+#    p_rentals.add_argument("--video", type=int, nargs="+")
+#    p_rentals.add_argument(
+#        "status",
+#        nargs="?",
+#        default="active",
+#        choices=["active", "all", "overdue", "returned"],
+#    )
+
+
+@click.group()
+def cli():
+    pass
+
+
+@click.command()
+@click.argument("video_id", required=False)
+def videos(video_id):
+    video_req = requests.get(item_url("videos", video_id))
+    print(video_req)
+
+
+@click.command()
+@click.argument("customer_id", required=False)
+def customers(customer_id):
+    customer_req = requests.get(item_url("customers", customer_id))
+    print(customer_req)
+
+
+cli.add_command(videos)
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(cli())
