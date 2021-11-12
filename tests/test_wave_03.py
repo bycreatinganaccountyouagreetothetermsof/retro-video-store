@@ -3,6 +3,7 @@ from app.models.video import Video
 from app.models.customer import Customer
 from app import db
 from datetime import datetime
+import json
 
 VIDEO_TITLE = "A Brand New Video"
 VIDEO_ID = 1
@@ -155,3 +156,85 @@ def test_get_customer_history(client, five_overdue_five_returned):
     assert "title" in video
     assert "checkout_date" in video
     assert "due_date" in video
+
+
+"""cli tests"""
+
+import requests
+import rvsclient.__main__ as rvsclient
+
+
+@pytest.fixture
+def runner(app, capture_requests):
+    return app.test_cli_runner()
+
+
+@pytest.fixture
+def capture_requests(monkeypatch, client):
+    monkeypatch.setattr(requests, "get", client.get)
+    monkeypatch.setattr(requests, "post", client.post)
+
+
+def test_cli_no_args(runner):
+    result = runner.invoke(rvsclient.cli)
+    assert result.exit_code == 0
+
+
+def test_cli_no_args_json(runner):
+    result = runner.invoke(rvsclient.cli, args=["--json"])
+    assert result.exit_code == 2
+
+
+def test_cli_videos_no_args(runner, one_video):
+    result = runner.invoke(rvsclient.cli, args=["videos"])
+    assert result.exit_code == 0
+    assert result.output.startswith("Retrieved 1 videos:\n")
+
+
+def test_cli_videos_arg_id(runner, one_video):
+    result = runner.invoke(rvsclient.videos, args=["1"])
+    assert result.exit_code == 0
+    assert result.output.startswith("Video id: 1\n")
+
+
+def test_cli_json_videos_no_args(runner, one_video):
+    result = runner.invoke(rvsclient.cli, args=["--json", "videos"])
+    assert result.exit_code == 0
+    response_body = json.loads(result.output)
+    assert len(response_body) == 1
+    assert response_body[0]["title"] == VIDEO_TITLE
+    assert response_body[0]["id"] == VIDEO_ID
+    assert response_body[0]["total_inventory"] == VIDEO_INVENTORY
+
+
+def test_cli_json_videos_arg_id(runner, one_video):
+    result = runner.invoke(rvsclient.cli, args=["--json", "videos", "1"])
+    assert result.exit_code == 0
+    response_body = json.loads(result.output)
+    assert len(response_body) == 4
+    assert response_body["title"] == VIDEO_TITLE
+    assert response_body["id"] == VIDEO_ID
+    assert response_body["total_inventory"] == VIDEO_INVENTORY
+
+
+def test_cli_customers_no_args(runner, one_customer):
+    result = runner.invoke(rvsclient.cli, args=["customers"])
+    assert result.exit_code == 0
+    assert result.output.startswith("Retrieved 1 customers:\n")
+
+
+def test_cli_customers_arg_id(runner, one_customer):
+    result = runner.invoke(rvsclient.customers, args=["1"])
+    assert result.exit_code == 0
+    assert result.output.startswith("Customer id: 1\n")
+
+
+def test_cli_rentals_arg_overdue(runner, five_overdue_five_returned):
+    result = runner.invoke(rvsclient.cli, args=["rentals", "overdue"])
+    assert result.exit_code == 0
+    assert result.output.startswith("Test\nRetrieved 5 overdue rentals:\n\t")
+
+
+def test_cli_rentals_arg_history(runner, five_overdue_five_returned):
+    result = runner.invoke(rvsclient.cli, args=["rentals", "history"])
+    assert result.exit_code == 0
