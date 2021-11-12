@@ -31,3 +31,4 @@ can run against a real server. this was actually the hardest part to figure out
 - nicer text output formatting
 - more dynamic indentation on human output
 - try running it by hand against a heroku instance
+- all POST and other non-GET functionality
