@@ -1,18 +1,3 @@
-"""
-rvsclient
----
-this is a command line app for interacting with the retro-video-store api
-
-for testing, the requests package gets mocked from within the flask app, so it
-can run against a real server. this was actually the hardest part to figure out
-
-TODO:
-- implement "at least one required" option and double-filtering logic on rentals
-  active and rentals history commands
-- more json tests
-- try running it by hand against a heroku instance
-"""
-
 import click
 import requests
 from dotenv import load_dotenv
@@ -91,11 +76,16 @@ def customers(fmt, customer_id):
     fmt.echo_items(customer_json, "customer")
 
 
-@cli.group()
+@cli.group(invoke_without_command=True)
 @click.option("--video", required=False)
 @click.option("--customer", required=False)
+@click.pass_context
 @pass_fmt
-def rentals(fmt, video, customer):
+def rentals(fmt, ctx, video, customer):
+    if not ctx.invoked_subcommand and not customer and not video:
+        raise click.exceptions.UsageError(
+            message="You must specify at least one --customer or --video to view active rentals."
+        )
     if customer:
         active_req = requests.get(item_url("customers", id=customer, ext="history"))
         active = get_json(active_req)
@@ -123,8 +113,13 @@ def overdue(fmt, video, customer):
 @rentals.command()
 @click.option("--video", required=False)
 @click.option("--customer", required=False)
+@click.pass_context
 @pass_fmt
-def history(fmt, video, customer):
+def history(fmt, ctx, video, customer):
+    if not customer and not video:
+        raise click.exceptions.UsageError(
+            message="You must specify at least one --customer or --video to view rental history."
+        )
     if customer:
         history_req = requests.get(item_url("customers", id=customer, ext="history"))
         history = get_json(history_req)

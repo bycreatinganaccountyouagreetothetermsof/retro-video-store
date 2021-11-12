@@ -229,15 +229,31 @@ def test_cli_customers_arg_id(runner, one_customer):
     assert result.output.startswith("Customer id: 1\n")
 
 
+def test_cli_rentals_no_opt(runner, five_overdue_five_returned):
+    result = runner.invoke(rvsclient.cli, args=["rentals"])
+    assert result.exit_code == 2
+
+
+def test_cli_rentals_customer(runner, five_overdue_five_returned):
+    result = runner.invoke(rvsclient.cli, args=["rentals", "--customer", "1"])
+    assert result.exit_code == 0
+    assert result.output.startswith("Customer 1\nRetrieved 1 active rentals:\n\t")
+
+
 def test_cli_rentals_overdue(runner, five_overdue_five_returned):
     result = runner.invoke(rvsclient.cli, args=["rentals", "overdue"])
     assert result.exit_code == 0
     assert result.output.startswith("Retrieved 5 overdue rentals:\n\t")
 
 
-def test_cli_rentals_history(runner, five_overdue_five_returned):
+def test_cli_rentals_history_no_opt(runner, five_overdue_five_returned):
+    result = runner.invoke(rvsclient.cli, args=["rentals", "history"])
+    assert result.exit_code == 2
+
+
+def test_cli_rentals_history_customer(runner, five_overdue_five_returned):
     result = runner.invoke(
         rvsclient.cli, args=["rentals", "history", "--customer", "1"]
     )
     assert result.exit_code == 0
-    assert result.output.startswith("Retrieved 1 past rentals:\n\t")
+    assert result.output.startswith("Customer 1\nRetrieved 1 past rentals:\n\t")
