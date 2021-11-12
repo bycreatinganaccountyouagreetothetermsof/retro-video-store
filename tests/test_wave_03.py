@@ -192,7 +192,7 @@ def test_cli_videos_no_args(runner, one_video):
 
 
 def test_cli_videos_arg_id(runner, one_video):
-    result = runner.invoke(rvsclient.videos, args=["1"])
+    result = runner.invoke(rvsclient.cli, args=["videos", "1"])
     assert result.exit_code == 0
     assert result.output.startswith("Video id: 1\n")
 
@@ -224,17 +224,20 @@ def test_cli_customers_no_args(runner, one_customer):
 
 
 def test_cli_customers_arg_id(runner, one_customer):
-    result = runner.invoke(rvsclient.customers, args=["1"])
+    result = runner.invoke(rvsclient.cli, args=["customers", "1"])
     assert result.exit_code == 0
     assert result.output.startswith("Customer id: 1\n")
 
 
-def test_cli_rentals_arg_overdue(runner, five_overdue_five_returned):
+def test_cli_rentals_overdue(runner, five_overdue_five_returned):
     result = runner.invoke(rvsclient.cli, args=["rentals", "overdue"])
     assert result.exit_code == 0
-    assert result.output.startswith("Test\nRetrieved 5 overdue rentals:\n\t")
+    assert result.output.startswith("Retrieved 5 overdue rentals:\n\t")
 
 
-def test_cli_rentals_arg_history(runner, five_overdue_five_returned):
-    result = runner.invoke(rvsclient.cli, args=["rentals", "history"])
+def test_cli_rentals_history(runner, five_overdue_five_returned):
+    result = runner.invoke(
+        rvsclient.cli, args=["rentals", "history", "--customer", "1"]
+    )
     assert result.exit_code == 0
+    assert result.output.startswith("Retrieved 1 past rentals:\n\t")

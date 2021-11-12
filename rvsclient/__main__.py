@@ -1,3 +1,18 @@
+"""
+rvsclient
+---
+this is a command line app for interacting with the retro-video-store api
+
+for testing, the requests package gets mocked from within the flask app, so it
+can run against a real server. this was actually the hardest part to figure out
+
+TODO:
+- implement "at least one required" option and double-filtering logic on rentals
+  active and rentals history commands
+- more json tests
+- try running it by hand against a heroku instance
+"""
+
 import click
 import requests
 from dotenv import load_dotenv
@@ -76,29 +91,50 @@ def customers(fmt, customer_id):
     fmt.echo_items(customer_json, "customer")
 
 
-@cli.command()
+@cli.group()
 @click.option("--video", required=False)
 @click.option("--customer", required=False)
-@click.argument("status", required=False, default="active")
 @pass_fmt
-def rentals(fmt, video, customer, status):
-    if status == "overdue":
-        overdue_rentals_req = requests.get(item_url("rentals", ext="overdue"))
-        overdue = get_json(overdue_rentals_req)
-        if customer or video:
-            overdue = filter_rentals(overdue, customer, video)
-        fmt.echo_items(overdue, "overdue rental")
-    else:
-        if status == "active":
-            status == "rentals"  # active default by api
-        if customer:
-            customer_rentals_req = requests.get(item_url("customers", customer, status))
-            customer_rentals = get_json(customer_rentals_req)
-            return customer_rentals
-        if video:
-            video_rentals_req = requests.get(item_url("videos", video, status))
-            video_rentals = get_json(video_rentals_req)
-            return video_rentals
+def rentals(fmt, video, customer):
+    if customer:
+        active_req = requests.get(item_url("customers", id=customer, ext="history"))
+        active = get_json(active_req)
+        fmt.echo(f"Customer {customer}")
+        fmt.echo_items(active, "active rental")
+    if video:
+        active_req = requests.get(item_url("videos", id=video, ext="history"))
+        active = get_json(active_req)
+        fmt.echo(f"Video {video}")
+        fmt.echo_items(active, "active rental")
+
+
+@rentals.command()
+@click.option("--video", required=False)
+@click.option("--customer", required=False)
+@pass_fmt
+def overdue(fmt, video, customer):
+    overdue_req = requests.get(item_url("rentals", ext="overdue"))
+    overdue = get_json(overdue_req)
+    if customer or video:
+        overdue = filter_rentals(overdue, customer, video)
+    fmt.echo_items(overdue, "overdue rental")
+
+
+@rentals.command()
+@click.option("--video", required=False)
+@click.option("--customer", required=False)
+@pass_fmt
+def history(fmt, video, customer):
+    if customer:
+        history_req = requests.get(item_url("customers", id=customer, ext="history"))
+        history = get_json(history_req)
+        fmt.echo(f"Customer {customer}")
+        fmt.echo_items(history, "past rental")
+    if video:
+        history_req = requests.get(item_url("videos", id=video, ext="history"))
+        history = get_json(history_req)
+        fmt.echo(f"Video {video}")
+        fmt.echo_items(history, "past rental")
 
 
 def filter_rentals(rentals, customer=None, video=None):
