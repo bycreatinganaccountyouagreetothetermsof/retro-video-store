@@ -14,7 +14,6 @@ class Rental(db.Model):
     checked_in = db.Column(db.DateTime)
 
     def to_dict(self, format=None):
-        print(format)
         if format == "overdue":
             return {
                 "video_id": self.video_id,
