@@ -77,8 +77,8 @@ def customers(fmt, customer_id):
 
 
 @cli.group(invoke_without_command=True)
-@click.option("--video", required=False)
-@click.option("--customer", required=False)
+@click.option("--video", type=int, required=False)
+@click.option("--customer", type=int, required=False)
 @click.pass_context
 @pass_fmt
 def rentals(fmt, ctx, video, customer):
@@ -99,8 +99,8 @@ def rentals(fmt, ctx, video, customer):
 
 
 @rentals.command()
-@click.option("--video", required=False)
-@click.option("--customer", required=False)
+@click.option("--video", type=int, required=False)
+@click.option("--customer", type=int, required=False)
 @pass_fmt
 def overdue(fmt, video, customer):
     overdue_req = requests.get(item_url("rentals", ext="overdue"))
@@ -111,11 +111,10 @@ def overdue(fmt, video, customer):
 
 
 @rentals.command()
-@click.option("--video", required=False)
-@click.option("--customer", required=False)
-@click.pass_context
+@click.option("--video", type=int, required=False)
+@click.option("--customer", type=int, required=False)
 @pass_fmt
-def history(fmt, ctx, video, customer):
+def history(fmt, video, customer):
     if not customer and not video:
         raise click.exceptions.UsageError(
             message="You must specify at least one --customer or --video to view rental history."
