@@ -18,11 +18,18 @@ def item_url(model, id=None, ext=None):
 
 
 class Formatter:
-    def __init__(self, json_format=False):
-        self.json_format = json_format
+    def __init__(self, json_format):
+        self.json_format = True if json_format == "json" else False
 
-    def set_format(self, json_format):
-        self.json_format = json_format
+    @staticmethod
+    def format(ctx, param, value):
+        try:
+            fmt = ctx.obj.get("format")
+            if value is not None:
+                fmt.json_format = True if value == "json" else False
+            return fmt
+        except:
+            return Formatter(value)
 
     def echo(self, text):
         if not self.json_format:
@@ -48,40 +55,51 @@ class Formatter:
                     self.echo(f"""{indent}{k}: {v}""")
 
 
-pass_fmt = click.make_pass_decorator(Formatter, ensure=True)
+subcommand_json = click.option(
+    "--json",
+    "format_",
+    is_flag=True,
+    flag_value="json",
+    expose_value=False,
+    callback=Formatter.format,
+)
 
 
 @click.group()
-@click.option("--json", is_flag=True)
-@pass_fmt
-def cli(fmt, json):
-    fmt.set_format(json)
+@click.option(
+    "--json", "format_", is_flag=True, flag_value="json", callback=Formatter.format
+)
+@click.pass_context
+def cli(ctx, format_):
+    ctx.obj = {"format": format_}
 
 
 @cli.command()
 @click.argument("video_id", required=False)
-@pass_fmt
-def videos(fmt, video_id):
+@subcommand_json
+@click.pass_context
+def videos(ctx, video_id):
     video_req = requests.get(item_url("videos", video_id))
     video_json = get_json(video_req)
-    fmt.echo_items(video_json, "video")
+    ctx.obj["format"].echo_items(video_json, "video")
 
 
 @cli.command()
 @click.argument("customer_id", required=False)
-@pass_fmt
-def customers(fmt, customer_id):
+@subcommand_json
+@click.pass_context
+def customers(ctx, customer_id):
     customer_req = requests.get(item_url("customers", customer_id))
     customer_json = get_json(customer_req)
-    fmt.echo_items(customer_json, "customer")
+    ctx.obj["format"].echo_items(customer_json, "customer")
 
 
 @cli.group(invoke_without_command=True)
 @click.option("--video", type=int, required=False)
 @click.option("--customer", type=int, required=False)
+@subcommand_json
 @click.pass_context
-@pass_fmt
-def rentals(fmt, ctx, video, customer):
+def rentals(ctx, video, customer):
     if not ctx.invoked_subcommand and not customer and not video:
         raise click.exceptions.UsageError(
             message="You must specify at least one --customer or --video to view active rentals."
@@ -89,32 +107,34 @@ def rentals(fmt, ctx, video, customer):
     if customer:
         active_req = requests.get(item_url("customers", id=customer, ext="history"))
         active = get_json(active_req)
-        fmt.echo(f"Customer {customer}")
-        fmt.echo_items(active, "active rental")
+        ctx.obj["format"].echo(f"Customer {customer}")
+        ctx.obj["format"].echo_items(active, "active rental")
     if video:
         active_req = requests.get(item_url("videos", id=video, ext="history"))
         active = get_json(active_req)
-        fmt.echo(f"Video {video}")
-        fmt.echo_items(active, "active rental")
+        ctx.obj["format"].echo(f"Video {video}")
+        ctx.obj["format"].echo_items(active, "active rental")
 
 
 @rentals.command()
 @click.option("--video", type=int, required=False)
 @click.option("--customer", type=int, required=False)
-@pass_fmt
-def overdue(fmt, video, customer):
+@subcommand_json
+@click.pass_context
+def overdue(ctx, video, customer):
     overdue_req = requests.get(item_url("rentals", ext="overdue"))
     overdue = get_json(overdue_req)
     if customer or video:
         overdue = filter_rentals(overdue, customer, video)
-    fmt.echo_items(overdue, "overdue rental")
+    ctx.obj["format"].echo_items(overdue, "overdue rental")
 
 
 @rentals.command()
 @click.option("--video", type=int, required=False)
 @click.option("--customer", type=int, required=False)
-@pass_fmt
-def history(fmt, video, customer):
+@subcommand_json
+@click.pass_context
+def history(ctx, video, customer):
     if not customer and not video:
         raise click.exceptions.UsageError(
             message="You must specify at least one --customer or --video to view rental history."
@@ -122,13 +142,13 @@ def history(fmt, video, customer):
     if customer:
         history_req = requests.get(item_url("customers", id=customer, ext="history"))
         history = get_json(history_req)
-        fmt.echo(f"Customer {customer}")
-        fmt.echo_items(history, "past rental")
+        ctx.obj["format"].echo(f"Customer {customer}")
+        ctx.obj["format"].echo_items(history, "past rental")
     if video:
         history_req = requests.get(item_url("videos", id=video, ext="history"))
         history = get_json(history_req)
-        fmt.echo(f"Video {video}")
-        fmt.echo_items(history, "past rental")
+        ctx.obj["format"].echo(f"Video {video}")
+        ctx.obj["format"].echo_items(history, "past rental")
 
 
 def filter_rentals(rentals, customer=None, video=None):
