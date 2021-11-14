@@ -207,6 +207,16 @@ def test_cli_json_videos_no_args(runner, one_video):
     assert response_body[0]["total_inventory"] == VIDEO_INVENTORY
 
 
+def test_cli_videos_no_args_json(runner, one_video):
+    result = runner.invoke(rvsclient.cli, args=["videos", "--json"])
+    assert result.exit_code == 0
+    response_body = json.loads(result.output)
+    assert len(response_body) == 1
+    assert response_body[0]["title"] == VIDEO_TITLE
+    assert response_body[0]["id"] == VIDEO_ID
+    assert response_body[0]["total_inventory"] == VIDEO_INVENTORY
+
+
 def test_cli_json_videos_arg_id(runner, one_video):
     result = runner.invoke(rvsclient.cli, args=["--json", "videos", "1"])
     assert result.exit_code == 0
